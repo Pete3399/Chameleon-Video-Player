@@ -112,6 +112,11 @@ user-select: none">
         <br> <br>
       <div id="slidecontainer">
   <input type="range" min="0" max="100" value="25" class="slider" id="myRange">
+</div>
+<div id="zoomcontainer" style="margin-top:6px">
+  <div style="font-size:12px;margin-bottom:2px">Zoom: <span id="zoomLabel">1.0×</span></div>
+  <input type="range" min="50" max="300" value="100" class="slider" id="zoomRange">
+  <button class="button purple" id="zoomReset" onclick="resetZoom()" style="margin-top:4px;font-size:12px;padding:2px 8px">Reset Zoom</button>
 </div><br>
 <!--
        <br>
@@ -161,7 +166,9 @@ Skip30: ⇧<span id="plat4"></span>]
 
 
 Opacity-: ⇧<span id="plat6"></span>-&nbsp;&nbsp;
-Opacity+: ⇧<span id="plat5"></span>=&nbsp;  &nbsp;
+Opacity+: ⇧<span id="plat5"></span>=&nbsp;  &nbsp;<br>
+Zoom In: ⇧<span id="plat11"></span>.&nbsp;&nbsp;&nbsp;
+Zoom Out: ⇧<span id="plat12"></span>,&nbsp;
 
 
 
@@ -193,7 +200,29 @@ slider.oninput = function() {
 
 }
 
+var zoomSlider = document.getElementById("zoomRange");
 
+zoomSlider.oninput = function() {
+  var val = this.value / 100;
+  document.getElementById("zoomLabel").innerText = val.toFixed(1) + "×";
+  controller('zoom', val);
+}
+
+function resetZoom() {
+  zoomSlider.value = 100;
+  document.getElementById("zoomLabel").innerText = "1.0×";
+  controller('zoom', 1.0);
+}
+
+ipcRenderer.on("zoomreset", function() {
+  resetZoom();
+})
+
+ipcRenderer.on("zoomsync", function(event, val) {
+  var pct = Math.round(val * 100);
+  zoomSlider.value = pct;
+  document.getElementById("zoomLabel").innerText = val.toFixed(1) + "×";
+})
 
 
 //document.getElementById("plat").innerHTML="⊞"; //⌘
