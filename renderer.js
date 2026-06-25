@@ -230,5 +230,30 @@ ipcRenderer.on("timefastforward", function(){
 vid.currentTime = vid.currentTime +240;
 });
 
+var currentZoom = 1.0;
 
+function applyZoom(val) {
+  currentZoom = Math.min(3.0, Math.max(0.5, val));
+  var origin = 'center center';
+  document.getElementById('vidContainer').style.transform = 'scale(' + currentZoom + ')';
+  document.getElementById('vidContainer').style.transformOrigin = origin;
+  document.getElementById('browserContainer').style.transform = 'scale(' + currentZoom + ')';
+  document.getElementById('browserContainer').style.transformOrigin = origin;
+  if (typeof remote !== 'undefined') {
+    remote.getGlobal && (remote.app && (remote.app.currentZoom = currentZoom));
+  }
+}
 
+ipcRenderer.on("zoom", function(event, val) {
+  applyZoom(val);
+});
+
+ipcRenderer.on("zoomin", function() {
+  applyZoom(Math.round((currentZoom + 0.1) * 10) / 10);
+  ipcRenderer.send("zoomsync", currentZoom);
+});
+
+ipcRenderer.on("zoomout", function() {
+  applyZoom(Math.round((currentZoom - 0.1) * 10) / 10);
+  ipcRenderer.send("zoomsync", currentZoom);
+});

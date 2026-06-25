@@ -654,6 +654,23 @@ ipcMain.on("autotoggle", function () {
     app.quit()
   });
 
+  ipcMain.on("zoom", function (event, val) {
+    parent.webContents.send("zoom", val);
+  });
+
+  ipcMain.on("zoomreset", function () {
+    parent.webContents.send("zoom", 1.0);
+    if (global.menubar && global.menubar.window && global.menubar.window.webContents) {
+      global.menubar.window.webContents.send("zoomreset");
+    }
+  });
+
+  ipcMain.on("zoomsync", function (event, val) {
+    if (global.menubar && global.menubar.window && global.menubar.window.webContents) {
+      global.menubar.window.webContents.send("zoomsync", val);
+    }
+  });
+
 
 
 
@@ -733,6 +750,14 @@ ipcMain.on("autotoggle", function () {
 
     globalShortcut.register('Shift+CommandOrControl+m', () => {
       parent.webContents.send("mute");
+    })
+
+    globalShortcut.register('Shift+CommandOrControl+.', () => {
+      parent.webContents.send("zoomin");
+    })
+
+    globalShortcut.register('Shift+CommandOrControl+,', () => {
+      parent.webContents.send("zoomout");
     })
 
     //----------------------------------------------------------

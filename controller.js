@@ -217,6 +217,8 @@ input.addEventListener("keyup", function(event) {
 			document.getElementById('plat8').innerText="^"
 			document.getElementById('plat9').innerText="^"
 			document.getElementById('plat10').innerText="^"
+			if (document.getElementById('plat11')) { document.getElementById('plat11').innerText = "^" }
+			if (document.getElementById('plat12')) { document.getElementById('plat12').innerText = "^" }
 		} else {
 			document.getElementById('plat1').innerText = "⌘"
 			document.getElementById('plat2').innerText = "⌘"
@@ -228,6 +230,8 @@ input.addEventListener("keyup", function(event) {
 			document.getElementById('plat8').innerText = "⌘"
 			document.getElementById('plat9').innerText = "⌘"
 			document.getElementById('plat10').innerText = "⌘"
+			if (document.getElementById('plat11')) { document.getElementById('plat11').innerText = "⌘" }
+			if (document.getElementById('plat12')) { document.getElementById('plat12').innerText = "⌘" }
 		}
 
 
