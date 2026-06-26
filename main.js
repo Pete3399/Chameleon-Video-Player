@@ -37,27 +37,14 @@ global.steam = DRM && steam;
 
 // Module to control application life.
 const app = electron.app
-app.commandLine.appendSwitch('widevine-cdm-path', path.join(__dirname, 'widevinecdmadapter.plugin'))
-// The version of plugin can be got from `chrome://plugins` page in Chrome.
-app.commandLine.appendSwitch('widevine-cdm-version', '1.4.8.866')
+const remoteMain = require('@electron/remote/main')
+remoteMain.initialize()
 
-
-let pluginName
-switch (process.platform) {
-  case 'win32':
-    pluginName = 'pepflashplayer.dll'
-    break
-  case 'darwin':
-    pluginName = 'PepperFlashPlayer.plugin'
-    break
-  case 'linux':
-    pluginName = 'libpepflashplayer.so'
-    break
-}
-app.commandLine.appendSwitch('ppapi-flash-path', path.join(__dirname, pluginName))
-
-// Optional: Specify flash version, for example, v17.0.0.169
-app.commandLine.appendSwitch('ppapi-flash-version', '29.0.0.117')
+// Enable @electron/remote for every window as soon as it is created,
+// before any renderer script runs (fixes race condition with preloadWindow).
+app.on('browser-window-created', (event, win) => {
+  remoteMain.enable(win.webContents)
+})
 
 
 // Module to create native browser window.
@@ -70,16 +57,14 @@ const nativeImage=electron.nativeImage
 */
 const Menubar = require('menubar').menubar;
 
-const INDEX_HTML = path.join('file://', __dirname, 'index.html');
-const PROMPT_HTML = path.join('file://', __dirname, 'prompt.html');
-const MODE_HTML = path.join('file://', __dirname, 'mode.html');
+const INDEX_HTML = path.join(__dirname, 'index.html');
+const PROMPT_HTML = path.join(__dirname, 'prompt.html');
+const MODE_HTML = path.join(__dirname, 'mode.html');
 
-const TRANSPARENT_HTML = path.join('file://', __dirname, 'transparent.html');
-const MENU = path.join('file://', __dirname, 'menu.html');
+const TRANSPARENT_HTML = path.join(__dirname, 'transparent.html');
+const { pathToFileURL } = require('url');
+const MENU = pathToFileURL(path.join(__dirname, 'menu.html')).href;
 const CHILD_PADDING = 0;
-
-
-const url = require('url');
 
 
 ipcMain.on("quitprompt", function (event, arg) {
@@ -139,9 +124,8 @@ const addClickableRegion = options => {
     minimizable: false,
     fullscreen: false,
     webPreferences: {
-      // The `plugins` have to be enabled.
-      plugins: true,
-      nodeIntegration: true
+      nodeIntegration: true,
+      contextIsolation: false
     },
     icon: path.join(__dirname, 'assets/icons/png/icon_32x32@2x.png')
   });
@@ -167,7 +151,8 @@ const addClickableRegion = options => {
       }
     );
   */
-  childWindow.loadURL(TRANSPARENT_HTML);
+  remoteMain.enable(childWindow.webContents);
+  childWindow.loadFile(TRANSPARENT_HTML);
   childWindow.setIgnoreMouseEvents(true);
 
 
@@ -177,10 +162,11 @@ const addClickableRegion = options => {
     const menubar = Menubar({
       index: MENU,
       browserWindow: {
-        height: 300,
+        height: 390,
         width: 256,
         webPreferences: {
-          nodeIntegration: true
+          nodeIntegration: true,
+          contextIsolation: false
         },
         parent
       },
@@ -189,6 +175,9 @@ const addClickableRegion = options => {
       preloadWindow: true      
     });
     global.menubar = menubar;
+    menubar.on('after-create-window', () => {
+      remoteMain.enable(menubar.window.webContents);
+    });
     globalShortcut.register('Shift+CommandOrControl+t', () => {
       if(global.menubar&&global.menubar.window&&global.menubar.window.webContents){
         global.menubar.window.webContents.send("toggleView");
@@ -202,8 +191,7 @@ const addClickableRegion = options => {
 global.menubarShown = true;
 menubar
   .on('after-show', () => { global.menubarShown = true })
-  .on('after-hide', () => { global.menubarShown = false })
-  .on('focus-lost', () => { global.menubarShown = false; global.menubar.hideWindow() });
+  .on('after-hide', () => { global.menubarShown = false });
 
 
 };
@@ -308,12 +296,12 @@ ipcMain.on("showMenu", function (event, arg) {
     maximizable: false,
     minimizable: false,
     webPreferences: {
-      // The `plugins` have to be enabled.
-      plugins: true,
-      nodeIntegration: true
+      nodeIntegration: true,
+      contextIsolation: false
     },
   });
-  modeWin.loadURL(MODE_HTML);
+  remoteMain.enable(modeWin.webContents);
+  modeWin.loadFile(MODE_HTML);
 
   modeWin.show()
   modeWin.on('close', function (event) {
@@ -415,12 +403,12 @@ ipcMain.on("startNoPrompt", function (event, arg) {
     maximizable: false,
     minimizable: false,
     webPreferences: {
-      // The `plugins` have to be enabled.
-      plugins: true,
-      nodeIntegration: true
+      nodeIntegration: true,
+      contextIsolation: false
     },
   });
-  promptWin.loadURL(PROMPT_HTML);
+  remoteMain.enable(promptWin.webContents);
+  promptWin.loadFile(PROMPT_HTML);
 
   promptWin.show()
 
@@ -443,7 +431,12 @@ function ready() {
  globalShortcut.register('Shift+CmdOrCtrl+X', () => {
  	app.quit()
      });
-    
+
+  // Block DevTools shortcuts to prevent them from hijacking the display
+  globalShortcut.register('Shift+CmdOrCtrl+J', () => {});
+  globalShortcut.register('Shift+CmdOrCtrl+I', () => {});
+  globalShortcut.register('F12', () => {});
+
  globalShortcut.register('CmdOrCtrl+-', () => {
     });
     globalShortcut.register('CmdOrCtrl+=', () => {
@@ -546,10 +539,8 @@ function createWindow(w, h, p) {
 
   let parent = new BrowserWindow({
     webPreferences: {
-      plugins: true,
-      //sandbox: true,
-      //nodeIntegration: false,
       nodeIntegration: true,
+      contextIsolation: false,
       webviewTag: true
     },
     fullscreen: false,
@@ -567,6 +558,11 @@ function createWindow(w, h, p) {
   });
 
   parent.setSize(w, h);
+
+  // Forcibly close DevTools if somehow opened (prevents display hijack)
+  parent.webContents.on('devtools-opened', () => {
+    parent.webContents.closeDevTools();
+  });
 
   if (typeof p !== 'string') {
     parent.setIgnoreMouseEvents(true);
@@ -776,7 +772,8 @@ ipcMain.on("autotoggle", function () {
 */
   });
 
-  parent.loadURL(INDEX_HTML);
+  remoteMain.enable(parent.webContents);
+  parent.loadFile(INDEX_HTML);
   //parent.openDevTools();
   //---------------------------------
 
@@ -824,21 +821,6 @@ app.on('activate', function () {
     }
   }
 })
-
-app.on('widevine-ready', (version, lastVersion) => {
-  if (null !== lastVersion) {
-    console.log('Widevine ' + version + ', upgraded from ' + lastVersion + ', is ready to be used!');
-  } else {
-    console.log('Widevine ' + version + ' is ready to be used!');
-  }
-});
-app.on('widevine-update-pending', (currentVersion, pendingVersion) => {
-  console.log('Widevine ' + currentVersion + ' is ready to be upgraded to ' + pendingVersion + '!');
-});
-app.on('widevine-error', (error) => {
-  console.log('Widevine installation encountered an error: ' + error);
-});
-
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.

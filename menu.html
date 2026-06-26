@@ -129,19 +129,12 @@ user-select: none">
           -->
 <button onclick="toggleIT()" class="button red" id="hide"><span id="toggleTxt">Send To Background</span> <i id="secondToggleTxt" style="font-size:12px">(UnFocus)</i></button>
           
-<div id="scrubbing" style="margin-bottom:-10px;margin-top:-5px">
-
-<img onclick="controller('timefastback',null)" src="assets/icons/prev.png" draggable="false" style="width:31px;position:absolute;left:15px;top:79px;     
-    filter: drop-shadow(1px 2px 0px rgba(0,0,0,.5))">
-
-<img  onclick="controller('timeminus',null)" src="assets/icons/rewind.png" draggable="false" style="width:37px;position:absolute;left:61px;top:75px;     
-    filter: drop-shadow(0px 0px 5px rgba(255,255,255,1)">
-<img id="playpauser" onclick="controller('playpause',null)" src="assets/icons/ic_pause_black_24px.svg" draggable="false" style="width:60px;margin-top:-11px;     
-    filter: drop-shadow(1px 2px 0px rgba(0,0,0,.5))">
-<img onclick="controller('timeplus',null)" src="assets/icons/forward.png" draggable="false" style="width:37px;position:absolute;right:61px;top:75px;     
-    filter: drop-shadow(0px 0px 5px rgba(255,255,255,1))">
-<img onclick="controller('timefastforward',null)" src="assets/icons/next.png" draggable="false" style="width:31px;position:absolute;right:15px;top:79px;     
-    filter: drop-shadow(1px 2px 0px rgba(0,0,0,.5))">
+<div id="scrubbing" style="display:flex;align-items:center;justify-content:center;gap:6px;margin:4px 0 2px 0;">
+<img onclick="controller('timefastback',null)" src="assets/icons/prev.png" draggable="false" style="width:31px;filter: drop-shadow(1px 2px 0px rgba(0,0,0,.5))">
+<img onclick="controller('timeminus',null)" src="assets/icons/rewind.png" draggable="false" style="width:37px;filter: drop-shadow(0px 0px 5px rgba(255,255,255,1))">
+<img id="playpauser" onclick="controller('playpause',null)" src="assets/icons/ic_pause_black_24px.svg" draggable="false" style="width:60px;filter: drop-shadow(1px 2px 0px rgba(0,0,0,.5))">
+<img onclick="controller('timeplus',null)" src="assets/icons/forward.png" draggable="false" style="width:37px;filter: drop-shadow(0px 0px 5px rgba(255,255,255,1))">
+<img onclick="controller('timefastforward',null)" src="assets/icons/next.png" draggable="false" style="width:31px;filter: drop-shadow(1px 2px 0px rgba(0,0,0,.5))">
 </div>
 
 <hr style="border-color:black !important">

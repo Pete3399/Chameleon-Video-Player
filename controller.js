@@ -1,6 +1,6 @@
 
 var app = require('electron');
-const remote = app.remote;
+const remote = require('@electron/remote');
 var playlist = remote.getGlobal('playlist');
 var steam = remote.getGlobal('steam');
 var trials = remote.getGlobal('trials');
@@ -338,5 +338,4 @@ var controller = function (param, val) {
 
 
 var webFrame = require('electron').webFrame;
-webFrame.setVisualZoomLevelLimits(1,1);
-webFrame.setLayoutZoomLevelLimits(0, 0);
+webFrame.setVisualZoomLevelLimits(1, 1);
