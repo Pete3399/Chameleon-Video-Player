@@ -543,6 +543,9 @@ function createWindow(w, h, p) {
       contextIsolation: false,
       webviewTag: true
     },
+    // 'dock' type on Linux maps to _NET_WM_WINDOW_TYPE_DOCK which most
+    // X11 compositors (including VMware guests) keep above fullscreen windows.
+    type: process.platform === 'linux' ? 'dock' : undefined,
     fullscreen: false,
     width: w,
     height: h,
