@@ -543,9 +543,9 @@ function createWindow(w, h, p) {
       contextIsolation: false,
       webviewTag: true
     },
-    // 'dock' type on Linux maps to _NET_WM_WINDOW_TYPE_DOCK which most
-    // X11 compositors (including VMware guests) keep above fullscreen windows.
-    type: process.platform === 'linux' ? 'dock' : undefined,
+    // On Linux: show:false prevents auto-mapping so we can set the window type
+    // via xprop BEFORE KWin reads it (KWin only reads _NET_WM_WINDOW_TYPE at map time).
+    show: process.platform !== 'linux',
     fullscreen: false,
     width: w,
     height: h,
@@ -573,11 +573,19 @@ function createWindow(w, h, p) {
 
   parent.setAlwaysOnTop(true, "floating", 0);
   if (process.platform === 'linux') {
-    const { exec } = require('child_process');
-    // getNativeWindowHandle() returns the real X11 window ID for this specific window
+    const { exec, execSync } = require('child_process');
+    // Set _NET_WM_WINDOW_TYPE_TOOLTIP BEFORE the window is shown (mapped).
+    // KWin only reads the window type at map time, so xprop after show() has no effect.
+    // TOOLTIP → PopupLayer (priority 7) which is above ActiveLayer (6) used by fullscreen apps.
     const handleBuf = parent.getNativeWindowHandle();
     const winId = '0x' + handleBuf.readUInt32LE(0).toString(16);
     console.log('[Linux] Chameleon player X11 window ID:', winId);
+    try {
+      execSync(`xprop -id ${winId} -f _NET_WM_WINDOW_TYPE 32a -set _NET_WM_WINDOW_TYPE _NET_WM_WINDOW_TYPE_TOOLTIP`);
+      console.log('[Linux] Pre-map TOOLTIP window type set');
+    } catch(e) {
+      console.log('[Linux] Pre-map xprop error:', e.message);
+    }
 
     const enforceOnTop = () => {
       if (parent.isDestroyed()) return;
