@@ -790,19 +790,8 @@ ipcMain.on("autotoggle", function () {
     //parent.webContents.send('playlist', playlist);
 
     // On Linux: set TOOLTIP window type AFTER GTK realization but BEFORE XMapWindow.
-    // GTK sets _NET_WM_WINDOW_TYPE_NORMAL during content load (realization).
-    // This xprop runs after that but before show() triggers XMapWindow,
-    // so KWin reads TOOLTIP type → PopupLayer (7) which beats fullscreen ActiveLayer (6).
-    if (process.platform === 'linux') {
-      const { execSync } = require('child_process');
-      const preShowWinId = '0x' + parent.getNativeWindowHandle().readUInt32LE(0).toString(16);
-      try {
-        execSync(`xprop -id ${preShowWinId} -f _NET_WM_WINDOW_TYPE 32a -set _NET_WM_WINDOW_TYPE _NET_WM_WINDOW_TYPE_TOOLTIP`);
-        console.log('[Linux] Pre-show TOOLTIP type set for', preShowWinId);
-      } catch(e) {
-        console.log('[Linux] Pre-show xprop error:', e.message);
-      }
-    }
+    // NOTE: KWin places active fullscreen windows in ActiveLayer (6) which cannot
+    // be beaten from JavaScript. This only helps for maximized (non-fullscreen) windows.
     parent.show();
     parent.blur();
 /*
