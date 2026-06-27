@@ -573,25 +573,14 @@ function createWindow(w, h, p) {
 
   parent.setAlwaysOnTop(true, "floating", 0);
   if (process.platform === 'linux') {
-    const { exec, execSync } = require('child_process');
-    // Set _NET_WM_WINDOW_TYPE_TOOLTIP BEFORE the window is shown (mapped).
-    // KWin only reads the window type at map time, so xprop after show() has no effect.
-    // TOOLTIP → PopupLayer (priority 7) which is above ActiveLayer (6) used by fullscreen apps.
+    const { exec } = require('child_process');
     const handleBuf = parent.getNativeWindowHandle();
     const winId = '0x' + handleBuf.readUInt32LE(0).toString(16);
     console.log('[Linux] Chameleon player X11 window ID:', winId);
-    try {
-      execSync(`xprop -id ${winId} -f _NET_WM_WINDOW_TYPE 32a -set _NET_WM_WINDOW_TYPE _NET_WM_WINDOW_TYPE_TOOLTIP`);
-      console.log('[Linux] Pre-map TOOLTIP window type set');
-    } catch(e) {
-      console.log('[Linux] Pre-map xprop error:', e.message);
-    }
 
     const enforceOnTop = () => {
       if (parent.isDestroyed()) return;
       parent.setAlwaysOnTop(true, 'screen-saver');
-      parent.moveTop();
-      // Send _NET_WM_STATE_ABOVE directly to KWin via EWMH — more reliable than Electron's API
       exec(`wmctrl -i -r ${winId} -b add,above`, (err) => {
         if (err) console.log('[Linux] wmctrl:', err.message);
       });
@@ -800,6 +789,20 @@ ipcMain.on("autotoggle", function () {
     //parent.playlist=playlist
     //parent.webContents.send('playlist', playlist);
 
+    // On Linux: set TOOLTIP window type AFTER GTK realization but BEFORE XMapWindow.
+    // GTK sets _NET_WM_WINDOW_TYPE_NORMAL during content load (realization).
+    // This xprop runs after that but before show() triggers XMapWindow,
+    // so KWin reads TOOLTIP type → PopupLayer (7) which beats fullscreen ActiveLayer (6).
+    if (process.platform === 'linux') {
+      const { execSync } = require('child_process');
+      const preShowWinId = '0x' + parent.getNativeWindowHandle().readUInt32LE(0).toString(16);
+      try {
+        execSync(`xprop -id ${preShowWinId} -f _NET_WM_WINDOW_TYPE 32a -set _NET_WM_WINDOW_TYPE _NET_WM_WINDOW_TYPE_TOOLTIP`);
+        console.log('[Linux] Pre-show TOOLTIP type set for', preShowWinId);
+      } catch(e) {
+        console.log('[Linux] Pre-show xprop error:', e.message);
+      }
+    }
     parent.show();
     parent.blur();
 /*
