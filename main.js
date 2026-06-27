@@ -576,7 +576,10 @@ function createWindow(w, h, p) {
     parent.setAlwaysOnTop(true, 'screen-saver');
     const linuxOnTopInterval = setInterval(() => {
       if (!parent.isDestroyed()) {
+        // Toggle off then on forces the WM to re-evaluate stacking order
+        parent.setAlwaysOnTop(false);
         parent.setAlwaysOnTop(true, 'screen-saver');
+        parent.moveTop();
       } else {
         clearInterval(linuxOnTopInterval);
       }
