@@ -569,6 +569,19 @@ function createWindow(w, h, p) {
   }
 
   parent.setAlwaysOnTop(true, "floating", 0);
+  // On Linux (e.g. VMware guest), X11 window managers can "forget" the
+  // always-on-top state when another window maximizes or takes focus.
+  // Re-assert it every 500ms as a workaround.
+  if (process.platform === 'linux') {
+    parent.setAlwaysOnTop(true, 'screen-saver');
+    const linuxOnTopInterval = setInterval(() => {
+      if (!parent.isDestroyed()) {
+        parent.setAlwaysOnTop(true, 'screen-saver');
+      } else {
+        clearInterval(linuxOnTopInterval);
+      }
+    }, 500);
+  }
   // allows the window to show over a fullscreen window
   parent.setVisibleOnAllWorkspaces(true);
 
