@@ -572,21 +572,17 @@ function createWindow(w, h, p) {
   }
 
   parent.setAlwaysOnTop(true, "floating", 0);
-  // On Linux (e.g. VMware guest), X11 window managers can "forget" the
-  // always-on-top state when another window maximizes or takes focus.
-  // Re-assert it every 500ms as a workaround.
   if (process.platform === 'linux') {
     parent.setAlwaysOnTop(true, 'screen-saver');
+    // KDE/KWin on X11: use moveTop() to keep Chameleon above maximized windows.
+    // Do NOT toggle setAlwaysOnTop(false) — that briefly drops the window.
     const linuxOnTopInterval = setInterval(() => {
       if (!parent.isDestroyed()) {
-        // Toggle off then on forces the WM to re-evaluate stacking order
-        parent.setAlwaysOnTop(false);
-        parent.setAlwaysOnTop(true, 'screen-saver');
         parent.moveTop();
       } else {
         clearInterval(linuxOnTopInterval);
       }
-    }, 500);
+    }, 300);
   }
   // allows the window to show over a fullscreen window
   parent.setVisibleOnAllWorkspaces(true);
