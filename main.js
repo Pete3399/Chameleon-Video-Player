@@ -573,16 +573,30 @@ function createWindow(w, h, p) {
 
   parent.setAlwaysOnTop(true, "floating", 0);
   if (process.platform === 'linux') {
-    parent.setAlwaysOnTop(true, 'screen-saver');
-    // KDE/KWin on X11: use moveTop() to keep Chameleon above maximized windows.
-    // Do NOT toggle setAlwaysOnTop(false) — that briefly drops the window.
+    const { exec } = require('child_process');
+    // getNativeWindowHandle() returns the real X11 window ID for this specific window
+    const handleBuf = parent.getNativeWindowHandle();
+    const winId = '0x' + handleBuf.readUInt32LE(0).toString(16);
+    console.log('[Linux] Chameleon player X11 window ID:', winId);
+
+    const enforceOnTop = () => {
+      if (parent.isDestroyed()) return;
+      parent.setAlwaysOnTop(true, 'screen-saver');
+      parent.moveTop();
+      // Send _NET_WM_STATE_ABOVE directly to KWin via EWMH — more reliable than Electron's API
+      exec(`wmctrl -i -r ${winId} -b add,above`, (err) => {
+        if (err) console.log('[Linux] wmctrl:', err.message);
+      });
+    };
+
+    enforceOnTop();
     const linuxOnTopInterval = setInterval(() => {
       if (!parent.isDestroyed()) {
-        parent.moveTop();
+        enforceOnTop();
       } else {
         clearInterval(linuxOnTopInterval);
       }
-    }, 300);
+    }, 1000);
   }
   // allows the window to show over a fullscreen window
   parent.setVisibleOnAllWorkspaces(true);
